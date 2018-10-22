@@ -6,21 +6,33 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Ps_Robokassa extends PaymentModule
+class Robokassa extends PaymentModule
 {
-    const FLAG_DISPLAY_PAYMENT_INVITE = 'BANK_WIRE_PAYMENT_INVITE';
+    //const FLAG_DISPLAY_PAYMENT_INVITE = 'BANK_WIRE_PAYMENT_INVITE';
+
+    const FLAG_ROBOKASSA_DEMO = 'ROBOKASSA_DEMO';
+    const FLAG_ROBOKASSA_POSTVALIDATE = 'ROBOKASSA_POSTVALIDATE';
 
     protected $_html = '';
     protected $_postErrors = array();
 
-    public $details;
     public $login;
-    public $address;
-    public $extra_mail_vars;
+    public $password1;
+    public $password2;
+    public $demo;
+    public $postValidate;
+
+    public $resultUrl;
+    public $successUrl;
+    public $failUrl;
+
+    // public $details;
+    // public $address;
+    //public $extra_mail_vars;
 
     public function __construct()
     {
-        $this->name = 'ps_robokassa';
+        $this->name = 'robokassa';
         $this->tab = 'payments_gateways';
         $this->version = '1.0.0';
         $this->ps_versions_compliancy = array('min' => '1.7.1.0', 'max' => _PS_VERSION_);
@@ -31,43 +43,45 @@ class Ps_Robokassa extends PaymentModule
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
 
-        $config = Configuration::getMultiple(array('BANK_WIRE_DETAILS', 'ROBOKASSA_LOGIN', 'BANK_WIRE_ADDRESS', 'BANK_WIRE_RESERVATION_DAYS'));
+        $config = Configuration::getMultiple(array('ROBOKASSA_LOGIN', 'ROBOKASSA_PASSWORD1', 'ROBOKASSA_PASSWORD2'));
         if (!empty($config['ROBOKASSA_LOGIN'])) {
             $this->login = $config['ROBOKASSA_LOGIN'];
         }
-        if (!empty($config['BANK_WIRE_DETAILS'])) {
-            $this->details = $config['BANK_WIRE_DETAILS'];
+        if (!empty($config['ROBOKASSA_PASSWORD1'])) {
+            $this->password1 = $config['ROBOKASSA_PASSWORD1'];
         }
-        if (!empty($config['BANK_WIRE_ADDRESS'])) {
-            $this->address = $config['BANK_WIRE_ADDRESS'];
+        if (!empty($config['ROBOKASSA_PASSWORD2'])) {
+            $this->password2 = $config['ROBOKASSA_PASSWORD2'];
         }
-        if (!empty($config['BANK_WIRE_RESERVATION_DAYS'])) {
-            $this->reservation_days = $config['BANK_WIRE_RESERVATION_DAYS'];
-        }
+        // if (!empty($config['BANK_WIRE_RESERVATION_DAYS'])) {
+        //     $this->reservation_days = $config['BANK_WIRE_RESERVATION_DAYS'];
+        // }
 
         $this->bootstrap = true;
         parent::__construct();
 
-        $this->displayName = $this->trans('Wire payment', array(), 'Modules.Wirepayment.Admin');
-        $this->description = $this->trans('Accept payments by bank transfer.', array(), 'Modules.Wirepayment.Admin');
-        $this->confirmUninstall = $this->trans('Are you sure about removing these details?', array(), 'Modules.Wirepayment.Admin');
-        if (!isset($this->login) || !isset($this->details) || !isset($this->address)) {
-            $this->warning = $this->trans('Account login and account details must be configured before using this module.', array(), 'Modules.Wirepayment.Admin');
+        $this->displayName = $this->trans('Robokassa payment', array(), 'Modules.Robokassa.Admin');
+        $this->description = $this->trans('Service to receive payments by plastic cards, in every e-currency, using mobile commerce.', array(), 'Modules.Robokassa.Admin');
+
+        $this->confirmUninstall = $this->trans('Are you sure about removing these details?', array(), 'Modules.Robokassa.Admin');
+        if (!isset($this->login) || !isset($this->password1) || !isset($this->password2)) {
+            $this->warning = $this->trans('Robokassa login, password1, password2 must be configured before using this module.', array(), 'Modules.Robokassa.Admin');
         }
         if (!count(Currency::checkPaymentCurrencies($this->id))) {
-            $this->warning = $this->trans('No currency has been set for this module.', array(), 'Modules.Wirepayment.Admin');
+            $this->warning = $this->trans('No currency has been set for this module.', array(), 'Modules.Robokassa.Admin');
         }
 
-        $this->extra_mail_vars = array(
-                                        '{robokassa_login}' => Configuration::get('ROBOKASSA_LOGIN'),
-                                        '{bankwire_details}' => nl2br(Configuration::get('BANK_WIRE_DETAILS')),
-                                        '{bankwire_address}' => nl2br(Configuration::get('BANK_WIRE_ADDRESS')),
-                                        );
+        // $this->extra_mail_vars = array(
+        //                                 '{robokassa_login}' => Configuration::get('ROBOKASSA_LOGIN'),
+        //                                 '{robokassa_password1}' => Configuration::get('ROBOKASSA_PASSWORD1'),
+        //                                 '{robokassa_password2}' => Configuration::get('ROBOKASSA_PASSWORD2'),
+        //                                 );
     }
 
     public function install()
     {
-        Configuration::updateValue(self::FLAG_DISPLAY_PAYMENT_INVITE, true);
+        Configuration::updateValue(self::FLAG_ROBOKASSA_DEMO, true);
+        Configuration::updateValue(self::FLAG_ROBOKASSA_POSTVALIDATE, true);
         if (!parent::install() || !$this->registerHook('paymentReturn') || !$this->registerHook('paymentOptions')) {
             return false;
         }
@@ -76,18 +90,18 @@ class Ps_Robokassa extends PaymentModule
 
     public function uninstall()
     {
-        $languages = Language::getLanguages(false);
-        foreach ($languages as $lang) {
-            if (!Configuration::deleteByName('BANK_WIRE_CUSTOM_TEXT', $lang['id_lang'])) {
-                return false;
-            }
-        }
+        // $languages = Language::getLanguages(false);
+        // foreach ($languages as $lang) {
+        //     if (!Configuration::deleteByName('BANK_WIRE_CUSTOM_TEXT', $lang['id_lang'])) {
+        //         return false;
+        //     }
+        // }
 
-        if (!Configuration::deleteByName('BANK_WIRE_DETAILS')
-                || !Configuration::deleteByName('ROBOKASSA_LOGIN')
-                || !Configuration::deleteByName('BANK_WIRE_ADDRESS')
-                || !Configuration::deleteByName('BANK_WIRE_RESERVATION_DAYS')
-                || !Configuration::deleteByName(self::FLAG_DISPLAY_PAYMENT_INVITE)
+        if (!Configuration::deleteByName('ROBOKASSA_LOGIN')
+                || !Configuration::deleteByName('ROBOKASSA_PASSWORD1')
+                || !Configuration::deleteByName('ROBOKASSA_PASSWORD2')
+                || !Configuration::deleteByName(self::FLAG_ROBOKASSA_DEMO)
+                || !Configuration::deleteByName(self::FLAG_ROBOKASSA_POSTVALIDATE)
                 || !parent::uninstall()) {
             return false;
         }
@@ -97,13 +111,18 @@ class Ps_Robokassa extends PaymentModule
     protected function _postValidation()
     {
         if (Tools::isSubmit('btnSubmit')) {
-            Configuration::updateValue(self::FLAG_DISPLAY_PAYMENT_INVITE,
-                Tools::getValue(self::FLAG_DISPLAY_PAYMENT_INVITE));
+            Configuration::updateValue(self::FLAG_ROBOKASSA_DEMO,
+                Tools::getValue(self::FLAG_ROBOKASSA_DEMO));
 
-            if (!Tools::getValue('BANK_WIRE_DETAILS')) {
-                $this->_postErrors[] = $this->trans('Account details are required.', array(), 'Modules.Wirepayment.Admin');
+            Configuration::updateValue(self::FLAG_ROBOKASSA_POSTVALIDATE,
+                Tools::getValue(self::FLAG_ROBOKASSA_POSTVALIDATE));
+
+            if (!Tools::getValue('ROBOKASSA_PASSWORD1')) {
+                $this->_postErrors[] = $this->trans('Robokassa password1 is required.', array(), 'Modules.Robokassa.Admin');
             } elseif (!Tools::getValue('ROBOKASSA_LOGIN')) {
-                $this->_postErrors[] = $this->trans('Account login is required.', array(), "Modules.Wirepayment.Admin");
+                $this->_postErrors[] = $this->trans('Robokassa login is required.', array(), "Modules.Robokassa.Admin");
+            } elseif (!Tools::getValue('ROBOKASSA_PASSWORD2')) {
+                $this->_postErrors[] = $this->trans('Robokassa password2 is required.', array(), "Modules.Robokassa.Admin");
             }
         }
     }
@@ -111,9 +130,9 @@ class Ps_Robokassa extends PaymentModule
     protected function _postProcess()
     {
         if (Tools::isSubmit('btnSubmit')) {
-            Configuration::updateValue('BANK_WIRE_DETAILS', Tools::getValue('BANK_WIRE_DETAILS'));
+            Configuration::updateValue('ROBOKASSA_PASSWORD1', Tools::getValue('ROBOKASSA_PASSWORD1'));
             Configuration::updateValue('ROBOKASSA_LOGIN', Tools::getValue('ROBOKASSA_LOGIN'));
-            Configuration::updateValue('BANK_WIRE_ADDRESS', Tools::getValue('BANK_WIRE_ADDRESS'));
+            Configuration::updateValue('ROBOKASSA_PASSWORD2', Tools::getValue('ROBOKASSA_PASSWORD2'));
 
             $custom_text = array();
             $languages = Language::getLanguages(false);
@@ -170,9 +189,9 @@ class Ps_Robokassa extends PaymentModule
 
         $newOption = new PaymentOption();
         $newOption->setModuleName($this->name)
-                ->setCallToActionText($this->trans('Pay by bank wire', array(), 'Modules.Wirepayment.Shop'))
+                ->setCallToActionText($this->trans('Pay by bank wire', array(), 'Modules.Robokassa.Shop'))
                 ->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true))
-                ->setAdditionalInformation($this->fetch('module:ps_wirepayment/views/templates/hook/ps_wirepayment_intro.tpl'));
+                ->setAdditionalInformation($this->fetch('module:robokassa/views/templates/hook/robokassa_intro.tpl'));
         $payment_options = [
             $newOption,
         ];
@@ -234,7 +253,7 @@ class Ps_Robokassa extends PaymentModule
             );
         }
 
-        return $this->fetch('module:ps_wirepayment/views/templates/hook/payment_return.tpl');
+        return $this->fetch('module:robokassa/views/templates/hook/payment_return.tpl');
     }
 
     public function checkCurrency($cart)
@@ -257,27 +276,26 @@ class Ps_Robokassa extends PaymentModule
         $fields_form = array(
             'form' => array(
                 'legend' => array(
-                    'title' => $this->trans('Account details', array(), 'Modules.Wirepayment.Admin'),
+                    'title' => $this->trans('Account details', array(), 'Modules.Robokassa.Admin'),
                     'icon' => 'icon-envelope'
                 ),
                 'input' => array(
                     array(
                         'type' => 'text',
-                        'label' => $this->trans('Account login', array(), 'Modules.Wirepayment.Admin'),
+                        'label' => $this->trans('Robokassa login', array(), 'Modules.Robokassa.Admin'),
                         'name' => 'ROBOKASSA_LOGIN',
                         'required' => true
                     ),
                     array(
-                        'type' => 'textarea',
-                        'label' => $this->trans('Account details', array(), 'Modules.Wirepayment.Admin'),
-                        'name' => 'BANK_WIRE_DETAILS',
-                        'desc' => $this->trans('Such as bank branch, IBAN number, BIC, etc.', array(), 'Modules.Wirepayment.Admin'),
+                        'type' => 'text',
+                        'label' => $this->trans('Robokassa password1', array(), 'Modules.Robokassa.Admin'),
+                        'name' => 'ROBOKASSA_PASSWORD1',
                         'required' => true
                     ),
                     array(
-                        'type' => 'textarea',
-                        'label' => $this->trans('Bank address', array(), 'Modules.Wirepayment.Admin'),
-                        'name' => 'BANK_WIRE_ADDRESS',
+                        'type' => 'text',
+                        'label' => $this->trans('Robokassa password2', array(), 'Modules.Robokassa.Admin'),
+                        'name' => 'ROBOKASSA_PASSWORD2',
                         'required' => true
                     ),
                 ),
@@ -289,29 +307,29 @@ class Ps_Robokassa extends PaymentModule
         $fields_form_customization = array(
             'form' => array(
                 'legend' => array(
-                    'title' => $this->trans('Customization', array(), 'Modules.Wirepayment.Admin'),
+                    'title' => $this->trans('Customization', array(), 'Modules.Robokassa.Admin'),
                     'icon' => 'icon-cogs'
                 ),
                 'input' => array(
                     array(
                         'type' => 'text',
-                        'label' => $this->trans('Reservation period', array(), 'Modules.Wirepayment.Admin'),
-                        'desc' => $this->trans('Number of days the items remain reserved', array(), 'Modules.Wirepayment.Admin'),
+                        'label' => $this->trans('Reservation period', array(), 'Modules.Robokassa.Admin'),
+                        'desc' => $this->trans('Number of days the items remain reserved', array(), 'Modules.Robokassa.Admin'),
                         'name' => 'BANK_WIRE_RESERVATION_DAYS',
                     ),
                     array(
                         'type' => 'textarea',
-                        'label' => $this->trans('Information to the customer', array(), 'Modules.Wirepayment.Admin'),
+                        'label' => $this->trans('Information to the customer', array(), 'Modules.Robokassa.Admin'),
                         'name' => 'BANK_WIRE_CUSTOM_TEXT',
-                        'desc' => $this->trans('Information on the bank transfer (processing time, starting of the shipping...)', array(), 'Modules.Wirepayment.Admin'),
+                        'desc' => $this->trans('Information on the bank transfer (processing time, starting of the shipping...)', array(), 'Modules.Robokassa.Admin'),
                         'lang' => true
                     ),
                     array(
                         'type' => 'switch',
-                        'label' => $this->trans('Display the invitation to pay in the order confirmation page', array(), 'Modules.Wirepayment.Admin'),
+                        'label' => $this->trans('Display the invitation to pay in the order confirmation page', array(), 'Modules.Robokassa.Admin'),
                         'name' => self::FLAG_DISPLAY_PAYMENT_INVITE,
                         'is_bool' => true,
-                        'hint' => $this->trans('Your country\'s legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.', array(), 'Modules.Wirepayment.Admin'),
+                        'hint' => $this->trans('Your country\'s legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.', array(), 'Modules.Robokassa.Admin'),
                         'values' => array(
                             array(
                                 'id' => 'active_on',
@@ -366,9 +384,9 @@ class Ps_Robokassa extends PaymentModule
         }
 
         return array(
-            'BANK_WIRE_DETAILS' => Tools::getValue('BANK_WIRE_DETAILS', Configuration::get('BANK_WIRE_DETAILS')),
+            'ROBOKASSA_PASSWORD1' => Tools::getValue('ROBOKASSA_PASSWORD1', Configuration::get('ROBOKASSA_PASSWORD1')),
             'ROBOKASSA_LOGIN' => Tools::getValue('ROBOKASSA_LOGIN', Configuration::get('ROBOKASSA_LOGIN')),
-            'BANK_WIRE_ADDRESS' => Tools::getValue('BANK_WIRE_ADDRESS', Configuration::get('BANK_WIRE_ADDRESS')),
+            'ROBOKASSA_PASSWORD2' => Tools::getValue('ROBOKASSA_PASSWORD2', Configuration::get('ROBOKASSA_PASSWORD2')),
             'BANK_WIRE_RESERVATION_DAYS' => Tools::getValue('BANK_WIRE_RESERVATION_DAYS', Configuration::get('BANK_WIRE_RESERVATION_DAYS')),
             'BANK_WIRE_CUSTOM_TEXT' => $custom_text,
             self::FLAG_DISPLAY_PAYMENT_INVITE => Tools::getValue(self::FLAG_DISPLAY_PAYMENT_INVITE,
@@ -380,7 +398,7 @@ class Ps_Robokassa extends PaymentModule
     {
         $cart = $this->context->cart;
         $total = sprintf(
-            $this->trans('%1$s (tax incl.)', array(), 'Modules.Wirepayment.Shop'),
+            $this->trans('%1$s (tax incl.)', array(), 'Modules.Robokassa.Shop'),
             Tools::displayPrice($cart->getOrderTotal(true, Cart::BOTH))
         );
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
 	<name>ps_robokassa</name>
-	<displayName><![CDATA[Wire payment]]></displayName>
+	<displayName><![CDATA[Robokassa payment]]></displayName>
 	<version><![CDATA[1.0.0]]></version>
-	<description><![CDATA[Accept payments via Robokassa service]]></description>
+	<description><![CDATA[Service to receive payments by plastic cards, in every e-currency, using mobile commerce]]></description>
 	<author><![CDATA[PrestaShop]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>
 	<confirmUninstall><![CDATA[Are you sure about removing these details?]]></confirmUninstall>

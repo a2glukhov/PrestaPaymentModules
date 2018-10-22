@@ -3,7 +3,7 @@
     <name>ps_robokassa</name>
     <displayName><![CDATA[Оплата через Robokassa]]></displayName>
     <version><![CDATA[2.0.4]]></version>
-    <description><![CDATA[Принимаются платежи через сервис Robokassa.]]></description>
+    <description><![CDATA[Сервис приема платежей через Robokassa.]]></description>
     <author><![CDATA[PrestaShop]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
 	<confirmUninstall><![CDATA[Вы точно хотите удалить эти данные?]]></confirmUninstall>
