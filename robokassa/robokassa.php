@@ -130,23 +130,24 @@ class Robokassa extends PaymentModule
     protected function _postProcess()
     {
         if (Tools::isSubmit('btnSubmit')) {
-            Configuration::updateValue('ROBOKASSA_PASSWORD1', Tools::getValue('ROBOKASSA_PASSWORD1'));
             Configuration::updateValue('ROBOKASSA_LOGIN', Tools::getValue('ROBOKASSA_LOGIN'));
+            Configuration::updateValue('ROBOKASSA_PASSWORD1', Tools::getValue('ROBOKASSA_PASSWORD1'));
             Configuration::updateValue('ROBOKASSA_PASSWORD2', Tools::getValue('ROBOKASSA_PASSWORD2'));
 
-            $custom_text = array();
-            $languages = Language::getLanguages(false);
-            foreach ($languages as $lang) {
-                if (Tools::getIsset('BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang'])) {
-                    $custom_text[$lang['id_lang']] = Tools::getValue('BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang']);
-                }
-            }
-            Configuration::updateValue('BANK_WIRE_RESERVATION_DAYS', Tools::getValue('BANK_WIRE_RESERVATION_DAYS'));
-            Configuration::updateValue('BANK_WIRE_CUSTOM_TEXT', $custom_text);
+            // $custom_text = array();
+            // $languages = Language::getLanguages(false);
+            // foreach ($languages as $lang) {
+            //     if (Tools::getIsset('BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang'])) {
+            //         $custom_text[$lang['id_lang']] = Tools::getValue('BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang']);
+            //     }
+            // }
+            // Configuration::updateValue('BANK_WIRE_RESERVATION_DAYS', Tools::getValue('BANK_WIRE_RESERVATION_DAYS'));
+            // Configuration::updateValue('BANK_WIRE_CUSTOM_TEXT', $custom_text);
         }
         $this->_html .= $this->displayConfirmation($this->trans('Settings updated', array(), 'Admin.Global'));
     }
 
+    //TODO FIND OUT FOR WHAT!!!
     protected function _displayBankWire()
     {
         return $this->display(__FILE__, 'infos.tpl');
@@ -374,23 +375,25 @@ class Robokassa extends PaymentModule
 
     public function getConfigFieldsValues()
     {
-        $custom_text = array();
-        $languages = Language::getLanguages(false);
-        foreach ($languages as $lang) {
-            $custom_text[$lang['id_lang']] = Tools::getValue(
-                'BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang'],
-                Configuration::get('BANK_WIRE_CUSTOM_TEXT', $lang['id_lang'])
-            );
-        }
+        // $custom_text = array();
+        // $languages = Language::getLanguages(false);
+        // foreach ($languages as $lang) {
+        //     $custom_text[$lang['id_lang']] = Tools::getValue(
+        //         'BANK_WIRE_CUSTOM_TEXT_'.$lang['id_lang'],
+        //         Configuration::get('BANK_WIRE_CUSTOM_TEXT', $lang['id_lang'])
+        //     );
+        // }
 
         return array(
-            'ROBOKASSA_PASSWORD1' => Tools::getValue('ROBOKASSA_PASSWORD1', Configuration::get('ROBOKASSA_PASSWORD1')),
             'ROBOKASSA_LOGIN' => Tools::getValue('ROBOKASSA_LOGIN', Configuration::get('ROBOKASSA_LOGIN')),
+            'ROBOKASSA_PASSWORD1' => Tools::getValue('ROBOKASSA_PASSWORD1', Configuration::get('ROBOKASSA_PASSWORD1')),
             'ROBOKASSA_PASSWORD2' => Tools::getValue('ROBOKASSA_PASSWORD2', Configuration::get('ROBOKASSA_PASSWORD2')),
-            'BANK_WIRE_RESERVATION_DAYS' => Tools::getValue('BANK_WIRE_RESERVATION_DAYS', Configuration::get('BANK_WIRE_RESERVATION_DAYS')),
-            'BANK_WIRE_CUSTOM_TEXT' => $custom_text,
-            self::FLAG_DISPLAY_PAYMENT_INVITE => Tools::getValue(self::FLAG_DISPLAY_PAYMENT_INVITE,
-                Configuration::get(self::FLAG_DISPLAY_PAYMENT_INVITE))
+            // 'BANK_WIRE_RESERVATION_DAYS' => Tools::getValue('BANK_WIRE_RESERVATION_DAYS', Configuration::get('BANK_WIRE_RESERVATION_DAYS')),
+            // 'BANK_WIRE_CUSTOM_TEXT' => $custom_text,
+            self::FLAG_ROBOKASSA_DEMO => Tools::getValue(self::FLAG_ROBOKASSA_DEMO,
+                Configuration::get(self::FLAG_ROBOKASSA_DEMO)),
+            self::FLAG_ROBOKASSA_POSTVALIDATE => Tools::getValue(self::FLAG_ROBOKASSA_POSTVALIDATE,
+                Configuration::get(self::FLAG_ROBOKASSA_POSTVALIDATE))
         );
     }
 
