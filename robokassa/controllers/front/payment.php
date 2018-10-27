@@ -27,7 +27,7 @@
 /**
  * @since 1.5.0
  */
-class Ps_WirepaymentPaymentModuleFrontController extends ModuleFrontController
+class RobokassaPaymentModuleFrontController extends ModuleFrontController
 {
 	public $ssl = true;
 
@@ -43,14 +43,14 @@ class Ps_WirepaymentPaymentModuleFrontController extends ModuleFrontController
 			Tools::redirect('index.php?controller=order');
 
 		$total = sprintf(
-			$this->getTranslator()->trans('%1$s (tax incl.)', array(), 'Modules.Wirepayment.Shop'),
+			$this->getTranslator()->trans('%1$s (tax incl.)', array(), 'Modules.Robokassa.Shop'),
 			Tools::displayPrice($cart->getOrderTotal(true, Cart::BOTH))
 		);
 
 		$this->context->smarty->assign(array(
       'back_url' => $this->context->link->getPageLink('order', true, NULL, "step=3"),
-			'confirm_url' => $this->context->link->getModuleLink('ps_wirepayment', 'validation', [], true),
-			'image_url' => $this->module->getPathUri() . 'ps_wirepayment.jpg',
+			'confirm_url' => $this->context->link->getModuleLink('robokassa', 'validation', [], true),
+			'image_url' => $this->module->getPathUri() . 'robokassa.jpg',
 			'cust_currency' => $cart->id_currency,
 			'currencies' => $this->module->getCurrency((int)$cart->id_currency),
 			'total' => $total,

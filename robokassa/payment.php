@@ -10,4 +10,4 @@ Tools::displayFileAsDeprecated();
 $controller = new FrontController();
 $controller->init();
 
-Tools::redirect(Context::getContext()->link->getModuleLink('ps_robokassa', 'payment'));
+Tools::redirect(Context::getContext()->link->getModuleLink('robokassa', 'payment'));

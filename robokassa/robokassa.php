@@ -147,8 +147,7 @@ class Robokassa extends PaymentModule
         $this->_html .= $this->displayConfirmation($this->trans('Settings updated', array(), 'Admin.Global'));
     }
 
-    //TODO FIND OUT FOR WHAT!!!
-    protected function _displayBankWire()
+    protected function _displayRobokassa()
     {
         return $this->display(__FILE__, 'infos.tpl');
     }
@@ -168,7 +167,7 @@ class Robokassa extends PaymentModule
             $this->_html .= '<br />';
         }
 
-        $this->_html .= $this->_displayBankWire();
+        $this->_html .= $this->_displayRobokassa();
         $this->_html .= $this->renderForm();
 
         return $this->_html;
@@ -190,7 +189,7 @@ class Robokassa extends PaymentModule
 
         $newOption = new PaymentOption();
         $newOption->setModuleName($this->name)
-                ->setCallToActionText($this->trans('Pay by bank wire', array(), 'Modules.Robokassa.Shop'))
+                ->setCallToActionText($this->trans('Pay via robokassa', array(), 'Modules.Robokassa.Shop'))
                 ->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true))
                 ->setAdditionalInformation($this->fetch('module:robokassa/views/templates/hook/robokassa_intro.tpl'));
         $payment_options = [
@@ -211,7 +210,7 @@ class Robokassa extends PaymentModule
             in_array(
                 $state,
                 array(
-                    Configuration::get('PS_OS_BANKWIRE'),
+                    Configuration::get('PS_OS_ROBOKASSA'),
                     Configuration::get('PS_OS_OUTOFSTOCK'),
                     Configuration::get('PS_OS_OUTOFSTOCK_UNPAID'),
                 )
@@ -277,7 +276,7 @@ class Robokassa extends PaymentModule
         $fields_form = array(
             'form' => array(
                 'legend' => array(
-                    'title' => $this->trans('Account details', array(), 'Modules.Robokassa.Admin'),
+                    'title' => $this->trans('Robokassa settings', array(), 'Modules.Robokassa.Admin'),
                     'icon' => 'icon-envelope'
                 ),
                 'input' => array(
@@ -299,36 +298,29 @@ class Robokassa extends PaymentModule
                         'name' => 'ROBOKASSA_PASSWORD2',
                         'required' => true
                     ),
-                ),
-                'submit' => array(
-                    'title' => $this->trans('Save', array(), 'Admin.Actions'),
-                )
-            ),
-        );
-        $fields_form_customization = array(
-            'form' => array(
-                'legend' => array(
-                    'title' => $this->trans('Customization', array(), 'Modules.Robokassa.Admin'),
-                    'icon' => 'icon-cogs'
-                ),
-                'input' => array(
                     array(
-                        'type' => 'text',
-                        'label' => $this->trans('Reservation period', array(), 'Modules.Robokassa.Admin'),
-                        'desc' => $this->trans('Number of days the items remain reserved', array(), 'Modules.Robokassa.Admin'),
-                        'name' => 'BANK_WIRE_RESERVATION_DAYS',
-                    ),
-                    array(
-                        'type' => 'textarea',
-                        'label' => $this->trans('Information to the customer', array(), 'Modules.Robokassa.Admin'),
-                        'name' => 'BANK_WIRE_CUSTOM_TEXT',
-                        'desc' => $this->trans('Information on the bank transfer (processing time, starting of the shipping...)', array(), 'Modules.Robokassa.Admin'),
-                        'lang' => true
+                        'type' => 'switch',
+                        'label' => $this->trans('Display the invitation to pay in the order confirmation page', array(), 'Modules.Robokassa.Admin'),
+                        'name' => self::FLAG_ROBOKASSA_DEMO,
+                        'is_bool' => true,
+                        'hint' => $this->trans('Your country\'s legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.', array(), 'Modules.Robokassa.Admin'),
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => true,
+                                'label' => $this->trans('Enabled', array(), 'Admin.Global'),
+                            ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => false,
+                                'label' => $this->trans('Disabled', array(), 'Admin.Global'),
+                            )
+                        ),
                     ),
                     array(
                         'type' => 'switch',
                         'label' => $this->trans('Display the invitation to pay in the order confirmation page', array(), 'Modules.Robokassa.Admin'),
-                        'name' => self::FLAG_DISPLAY_PAYMENT_INVITE,
+                        'name' => self::FLAG_ROBOKASSA_POSTVALIDATE,
                         'is_bool' => true,
                         'hint' => $this->trans('Your country\'s legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.', array(), 'Modules.Robokassa.Admin'),
                         'values' => array(
@@ -350,6 +342,51 @@ class Robokassa extends PaymentModule
                 )
             ),
         );
+        // $fields_form_customization = array(
+        //     'form' => array(
+        //         'legend' => array(
+        //             'title' => $this->trans('Customization', array(), 'Modules.Robokassa.Admin'),
+        //             'icon' => 'icon-cogs'
+        //         ),
+        //         'input' => array(
+        //             array(
+        //                 'type' => 'text',
+        //                 'label' => $this->trans('Reservation period', array(), 'Modules.Robokassa.Admin'),
+        //                 'desc' => $this->trans('Number of days the items remain reserved', array(), 'Modules.Robokassa.Admin'),
+        //                 'name' => 'BANK_WIRE_RESERVATION_DAYS',
+        //             ),
+        //             array(
+        //                 'type' => 'textarea',
+        //                 'label' => $this->trans('Information to the customer', array(), 'Modules.Robokassa.Admin'),
+        //                 'name' => 'BANK_WIRE_CUSTOM_TEXT',
+        //                 'desc' => $this->trans('Information on the bank transfer (processing time, starting of the shipping...)', array(), 'Modules.Robokassa.Admin'),
+        //                 'lang' => true
+        //             ),
+        //             array(
+        //                 'type' => 'switch',
+        //                 'label' => $this->trans('Display the invitation to pay in the order confirmation page', array(), 'Modules.Robokassa.Admin'),
+        //                 'name' => self::FLAG_DISPLAY_PAYMENT_INVITE,
+        //                 'is_bool' => true,
+        //                 'hint' => $this->trans('Your country\'s legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.', array(), 'Modules.Robokassa.Admin'),
+        //                 'values' => array(
+        //                     array(
+        //                         'id' => 'active_on',
+        //                         'value' => true,
+        //                         'label' => $this->trans('Enabled', array(), 'Admin.Global'),
+        //                     ),
+        //                     array(
+        //                         'id' => 'active_off',
+        //                         'value' => false,
+        //                         'label' => $this->trans('Disabled', array(), 'Admin.Global'),
+        //                     )
+        //                 ),
+        //             ),
+        //         ),
+        //         'submit' => array(
+        //             'title' => $this->trans('Save', array(), 'Admin.Actions'),
+        //         )
+        //     ),
+        // );
 
         $helper = new HelperForm();
         $helper->show_toolbar = false;
@@ -370,7 +407,8 @@ class Robokassa extends PaymentModule
             'id_language' => $this->context->language->id
         );
 
-        return $helper->generateForm(array($fields_form, $fields_form_customization));
+        //return $helper->generateForm(array($fields_form, $fields_form_customization));
+        return $helper->generateForm(array($fields_form));
     }
 
     public function getConfigFieldsValues()
