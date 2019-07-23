@@ -214,8 +214,8 @@ class Robokassa extends PaymentModule
         $newOption = new PaymentOption();
         $newOption->setModuleName($this->name)
                 ->setCallToActionText($this->trans('Pay via robokassa', array(), 'Modules.Robokassa.Shop'))
-                ->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true));
-                //->setAdditionalInformation($this->fetch('module:robokassa/views/templates/hook/robokassa_intro.tpl'));
+                ->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true))
+                ->setAdditionalInformation($this->fetch('module:robokassa/views/templates/hook/robokassa_intro.tpl'));
         $payment_options = [
             $newOption,
         ];
@@ -225,7 +225,7 @@ class Robokassa extends PaymentModule
 
     public function hookPaymentReturn($params)
     {
-        if (!$this->active || !Configuration::get(self::FLAG_DISPLAY_PAYMENT_INVITE)) {
+        if (!$this->active || !Configuration::get(self::FLAG_ROBOKASSA_DEMO)) {
             return;
         }
 
@@ -239,20 +239,6 @@ class Robokassa extends PaymentModule
                     Configuration::get('PS_OS_OUTOFSTOCK_UNPAID'),
                 )
         )) {
-            $bankwireOwner = $this->login;
-            if (!$bankwireOwner) {
-                $bankwireOwner = '___________';
-            }
-
-            $bankwireDetails = Tools::nl2br($this->details);
-            if (!$bankwireDetails) {
-                $bankwireDetails = '___________';
-            }
-
-            $bankwireAddress = Tools::nl2br($this->address);
-            if (!$bankwireAddress) {
-                $bankwireAddress = '___________';
-            }
 
             $this->smarty->assign(array(
                 'shop_name' => $this->context->shop->name,
@@ -261,9 +247,9 @@ class Robokassa extends PaymentModule
                     new Currency($params['order']->id_currency),
                     false
                 ),
-                'bankwireDetails' => $bankwireDetails,
-                'bankwireAddress' => $bankwireAddress,
-                'bankwireOwner' => $bankwireOwner,
+                'robokassa_login' => $this->login,
+                'robokassa_password1' => $this->password1,
+                'robokassa_password2' => $this->password2,
                 'status' => 'ok',
                 'reference' => $params['order']->reference,
                 'contact_url' => $this->context->link->getPageLink('contact', true)
@@ -423,38 +409,13 @@ class Robokassa extends PaymentModule
             Tools::displayPrice($cart->getOrderTotal(true, Cart::BOTH))
         );
 
-         $bankwireOwner = $this->login;
-        if (!$bankwireOwner) {
-            $bankwireOwner = '___________';
-        }
-
-        $bankwireDetails = Tools::nl2br($this->details);
-        if (!$bankwireDetails) {
-            $bankwireDetails = '___________';
-        }
-
-        $bankwireAddress = Tools::nl2br($this->address);
-        if (!$bankwireAddress) {
-            $bankwireAddress = '___________';
-        }
-
-        $bankwireReservationDays = Configuration::get('BANK_WIRE_RESERVATION_DAYS');
-        if (false === $bankwireReservationDays) {
-            $bankwireReservationDays = 7;
-        }
-
-        $bankwireCustomText = Tools::nl2br(Configuration::get('BANK_WIRE_CUSTOM_TEXT', $this->context->language->id));
-        if (false === $bankwireCustomText) {
-            $bankwireCustomText = '';
-        }
-
         return array(
             'total' => $total,
-            'bankwireDetails' => $bankwireDetails,
-            'bankwireAddress' => $bankwireAddress,
-            'bankwireOwner' => $bankwireOwner,
-            'bankwireReservationDays' => (int)$bankwireReservationDays,
-            'bankwireCustomText' => $bankwireCustomText,
+            'robokassa_login' => $this->login,
+            'robokassa_password1' => $this->password1,
+            'robokassa_password2' => $this->password2,
+            'robokassa_demo' => (int)Configuration::get(self::FLAG_ROBOKASSA_DEMO),
+            'robokassa_postvalidate' => (int)Configuration::get(self::FLAG_ROBOKASSA_POSTVALIDATE),
         );
     }
 }
