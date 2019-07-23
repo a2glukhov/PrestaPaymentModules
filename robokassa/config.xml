@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
 	<name>robokassa</name>
-	<displayName><![CDATA[Robokassa payment]]></displayName>
+	<displayName><![CDATA[Robokassa]]></displayName>
 	<version><![CDATA[1.0.0]]></version>
 	<description><![CDATA[Service to receive payments by plastic cards, in every e-currency, using mobile commerce]]></description>
 	<author><![CDATA[a2glukhov]]></author>

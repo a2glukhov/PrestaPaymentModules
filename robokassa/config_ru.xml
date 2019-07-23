@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
     <name>robokassa</name>
-    <displayName><![CDATA[Оплата через Robokassa]]></displayName>
-    <version><![CDATA[2.0.4]]></version>
-    <description><![CDATA[Сервис приема платежей через Robokassa.]]></description>
+    <displayName><![CDATA[Robokassa]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[Сервис приема платежей через Robokassa]]></description>
     <author><![CDATA[a2glukhov]]></author>
     <tab><![CDATA[payments_gateways]]></tab>
 	<confirmUninstall><![CDATA[Вы точно хотите удалить эти данные?]]></confirmUninstall>

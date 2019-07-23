@@ -30,7 +30,7 @@ if (!Validate::isLoadedObject($customer))
 $currency = $context->currency;
 $total = (float)($cart->getOrderTotal(true, Cart::BOTH));
 
-$robokassa->validateOrder($cart->id, Configuration::get('PS_OS_ROBOKASSA), $total, $robokassa->displayName, NULL, array(), (int)$currency->id, false, $customer->secure_key);
+$robokassa->validateOrder($cart->id, Configuration::get('ROBOKASSA_OS_WAITING'), $total, $robokassa->displayName, NULL, array(), (int)$currency->id, false, $customer->secure_key);
 
 $order = new Order($robokassa->currentOrder);
 Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$robokassa->id.'&id_order='.$robokassa->currentOrder.'&key='.$customer->secure_key);
