@@ -36,7 +36,7 @@ class Robokassa extends PaymentModule
         $this->tab = 'payments_gateways';
         $this->version = '1.0.0';
         $this->ps_versions_compliancy = array('min' => '1.7.1.0', 'max' => _PS_VERSION_);
-        $this->author = 'PrestaShop';
+        $this->author = 'Alexander Glukhov';
         $this->controllers = array('payment', 'validation');
         $this->is_eu_compatible = 1;
 
@@ -53,9 +53,8 @@ class Robokassa extends PaymentModule
         if (!empty($config['ROBOKASSA_PASSWORD2'])) {
             $this->password2 = $config['ROBOKASSA_PASSWORD2'];
         }
-        // if (!empty($config['BANK_WIRE_RESERVATION_DAYS'])) {
-        //     $this->reservation_days = $config['BANK_WIRE_RESERVATION_DAYS'];
-        // }
+
+        //TODO возможно нужно проинитить флаги робокассы
 
         $this->bootstrap = true;
         parent::__construct();
@@ -64,9 +63,11 @@ class Robokassa extends PaymentModule
         $this->description = $this->trans('Service to receive payments by plastic cards, in every e-currency, using mobile commerce.', array(), 'Modules.Robokassa.Admin');
 
         $this->confirmUninstall = $this->trans('Are you sure about removing these details?', array(), 'Modules.Robokassa.Admin');
+        
         if (!isset($this->login) || !isset($this->password1) || !isset($this->password2)) {
             $this->warning = $this->trans('Robokassa login, password1, password2 must be configured before using this module.', array(), 'Modules.Robokassa.Admin');
         }
+
         if (!count(Currency::checkPaymentCurrencies($this->id))) {
             $this->warning = $this->trans('No currency has been set for this module.', array(), 'Modules.Robokassa.Admin');
         }
@@ -74,13 +75,14 @@ class Robokassa extends PaymentModule
 
     public function install()
     {
-        Configuration::updateValue(self::FLAG_ROBOKASSA_DEMO, true);
-        Configuration::updateValue(self::FLAG_ROBOKASSA_POSTVALIDATE, true);
-
         if (!parent::install() || !$this->registerHook('paymentReturn') || !$this->registerHook('paymentOptions')) {
             return false;
         }
-		
+        
+        if (!$this->installModuleConfiguration()) {
+            return false;
+        }
+
 		// Registration order status
         if (!$this->installOrderState()) {
             return false;
@@ -91,15 +93,33 @@ class Robokassa extends PaymentModule
 
     public function uninstall()
     {
-        if (!Configuration::deleteByName('ROBOKASSA_LOGIN')
-                || !Configuration::deleteByName('ROBOKASSA_PASSWORD1')
-                || !Configuration::deleteByName('ROBOKASSA_PASSWORD2')
-                || !Configuration::deleteByName(self::FLAG_ROBOKASSA_DEMO)
-                || !Configuration::deleteByName(self::FLAG_ROBOKASSA_POSTVALIDATE)
-                || !parent::uninstall()) {
+        if (!$this->uninstallModuleConfiguration())
+        {
             return false;
         }
+
+        if (!parent::uninstall()) {
+            return false;
+        }
+        
+        //todo удалить статусы робокассы
+
         return true;
+    }
+
+    public function installModuleConfiguration()
+    {
+        return Configuration::updateValue(self::FLAG_ROBOKASSA_DEMO, true)
+            && Configuration::updateValue(self::FLAG_ROBOKASSA_POSTVALIDATE, true);
+    }
+
+    public function uninstallModuleConfiguration()
+    {
+        return Configuration::deleteByName('ROBOKASSA_LOGIN')
+            && Configuration::deleteByName('ROBOKASSA_PASSWORD1')
+            && Configuration::deleteByName('ROBOKASSA_PASSWORD2')
+            && Configuration::deleteByName(self::FLAG_ROBOKASSA_DEMO)
+            && Configuration::deleteByName(self::FLAG_ROBOKASSA_POSTVALIDATE);
     }
 
 	public function installOrderState()
@@ -116,7 +136,7 @@ class Robokassa extends PaymentModule
                 }
             }
             $order_state->send_email = false;
-            $order_state->color = '#4169E1';
+            $order_state->color = '#95cc6b';
             $order_state->hidden = false;
             $order_state->delivery = false;
             $order_state->logable = false;
@@ -211,13 +231,14 @@ class Robokassa extends PaymentModule
             $this->getTemplateVarInfos()
         );
 
-        $newOption = new PaymentOption();
-        $newOption->setModuleName($this->name)
+        $robokassaPaymentOption = new PaymentOption();
+        $robokassaPaymentOption->setModuleName($this->name)
                 ->setCallToActionText($this->trans('Pay via robokassa', array(), 'Modules.Robokassa.Shop'))
-                ->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true))
+                ->setForm($this->generateValidationForm())
+                //->setAction($this->context->link->getModuleLink($this->name, 'validation', array(), true))
                 ->setAdditionalInformation($this->fetch('module:robokassa/views/templates/hook/robokassa_intro.tpl'));
         $payment_options = [
-            $newOption,
+            $robokassaPaymentOption,
         ];
 
         return $payment_options;
@@ -377,6 +398,29 @@ class Robokassa extends PaymentModule
         return $helper->generateForm(array($fields_form));
     }
 
+    public function generateValidationForm()
+    {
+        $cart = $this->context->cart;
+        $currency_order = new Currency($cart->id_currency);
+        $total = (float)$cart->getOrderTotal(true, Cart::BOTH);
+        $customVars = '';
+        $crc = md5("{$this->login}:{$total}:{$currency_order->id}:{$this->password1}{$customVars}");
+
+        $this->context->smarty->assign([
+            //'action' => $this->context->link->getModuleLink($this->name, 'validation', array(), true),
+            'action' => 'http://test.robokassa.ru/Index.aspx?'
+            'mrh_login' => $this->login,
+            'out_summ' => $total,
+            'inv_id' => $currency_order->id,
+            'inv_desc' => '',
+            'crc' => $crc,
+            'in_curr' => '',
+            'culture' => 'ru',
+        ]);
+
+        return $this->context->smarty->fetch('module:robokassa/views/templates/front/payment_form.tpl');
+    }
+    
     public function getConfigFieldsValues()
     {
         // $custom_text = array();
